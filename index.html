@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>สุขสันต์วันเกิดนะ!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- Minimalist Color Palette --- */
+        :root {
+            --bg-color: #f8f9fa; /* สีพื้นหลังขาวครีม */
+            --primary-color: #a29bfe; /* สีม่วงพาสเทล */
+            --secondary-color: #74b9ff; /* สีฟ้าพาสเทล */
+            --accent-color: #fab1a0; /* สีส้มโอรส */
+            --text-color-dark: #2d3436;
+            --text-color-light: #ffffff;
+            --white: #ffffff;
+        }
+
+        /* --- General Styles --- */
+        body {
+            margin: 0;
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg-color);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .main-container {
+             display: flex;
+             justify-content: center;
+             align-items: center;
+             height: 100%;
+             flex-direction: column;
+             position: relative;
+             z-index: 5;
+        }
+
+        /* --- Step Styles --- */
+        .step-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .step-screen.active {
+            display: flex;
+        }
+
+        .step-message {
+            font-size: 2em;
+            margin-bottom: 40px;
+            color: var(--primary-color);
+        }
+
+        .next-btn {
+            padding: 12px 36px;
+            font-size: 1.2em;
+            background: var(--primary-color);
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        .next-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        /* --- Countdown & Gift Styles --- */
+        #countdown-screen {
+            display: none;
+            font-size: 120px;
+            color: #a29bfe;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .gift-container {
+            cursor: pointer;
+            text-align: center;
+            display: none;
+        }
+
+        .gift-box {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .gift-box:hover {
+            transform: scale(1.08);
+        }
+
+        .gift-lid {
+            width: 200px;
+            height: 50px;
+            background-color: var(--secondary-color);
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 10px;
+            z-index: 2;
+            transition: top 1.5s ease-in-out, transform 1.5s ease-in-out;
+        }
+         .gift-lid::after { /* โบว์ */
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 15px;
+            background-color: var(--primary-color);
+            top: 17.5px;
+            left: 60px;
+            border-radius: 5px;
+        }
+
+        .gift-box.open .gift-lid {
+            top: -100px;
+            transform: rotate(10deg);
+        }
+
+        .gift-base {
+            width: 200px;
+            height: 150px;
+            background-color: var(--secondary-color);
+            position: absolute;
+            bottom: 0;
+            border-radius: 0 0 10px 10px;
+        }
+        .gift-base::before { /* ริบบิ้น */
+            content: '';
+            position: absolute;
+            width: 15px;
+            height: 150px;
+            background-color: var(--primary-color);
+            left: 92.5px;
+            border-radius: 5px;
+        }
+
+        .click-text {
+            margin-top: 25px;
+            font-size: 22px;
+            color: var(--text-color-dark);
+            opacity: 0.7;
+        }
+
+        /* --- Modal (Pop-up) Styles --- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 150;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(45, 52, 54, 0.6);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: var(--white);
+            padding: 35px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 80%; /* Smaller width */
+            width: 400px; /* Smaller default width */
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            animation: fadeIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-content h1 {
+            color: var(--primary-color);
+            font-size: 2em;
+            margin-top: 0;
+        }
+
+        .modal-content p {
+            font-size: 1.1em;
+            color: var(--text-color-dark);
+            line-height: 1.6;
+        }
+        
+        /* --- Image container --- */
+        .image-container {
+             margin-top: 20px;
+             max-width: 100%;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            border-radius: 15px;
+        }
+
+
+        /* --- Canvas for Effects --- */
+        .effects-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; 
+            pointer-events: none;
+        }
+        #fireworks-canvas, #balloons-canvas {
+            z-index: 10;
+        }
+        #confetti-canvas {
+            z-index: 20;
+        }
+
+        /* --- New Gift Box Styles --- */
+        .gift-box.new-gift {
+            width: 220px;
+            height: 220px;
+            margin: 0 auto;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .gift-box.new-gift .gift-lid {
+            width: 220px;
+            height: 60px;
+            background: linear-gradient(90deg, #a29bfe 60%, #fab1a0 100%);
+            border-radius: 18px 18px 40px 40px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+            transition: top 1.5s ease-in-out, transform 1.5s ease-in-out;
+        }
+
+        .gift-box.new-gift.open .gift-lid {
+            top: -90px;
+            transform: rotate(-12deg);
+        }
+
+        .gift-box.new-gift .gift-base {
+            width: 220px;
+            height: 160px;
+            background: linear-gradient(90deg, #74b9ff 60%, #ffeaa7 100%);
+            border-radius: 0 0 18px 18px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            z-index: 1;
+            box-shadow: 0 8px 32px rgba(162,155,254,0.18);
+        }
+
+        .gift-box.new-gift .gift-ribbon {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 28px;
+            height: 220px;
+            background: linear-gradient(#fab1a0 60%, #a29bfe 100%);
+            border-radius: 12px;
+            transform: translateX(-50%);
+            z-index: 3;
+        }
+
+        .gift-box.new-gift .gift-lid::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 18px;
+            width: 90px;
+            height: 18px;
+            background: #ffeaa7;
+            border-radius: 12px;
+            transform: translateX(-50%) rotate(-8deg);
+            box-shadow: 0 0 12px #fab1a0;
+        }
+    </style>
+</head>
+<body>
+    
+    <canvas id="fireworks-canvas" class="effects-canvas"></canvas>
+    <canvas id="balloons-canvas" class="effects-canvas"></canvas>
+
+    <div class="main-container">
+        <div id="step1" class="step-screen active">
+            <div class="step-message">วันนี้วันที่ 6 สิงหา</div>
+            <button class="next-btn" id="to-step2">ถัดไป</button>
+        </div>
+        <div id="step2" class="step-screen">
+            <div class="step-message">Happy Birthday</div>
+            <button class="next-btn" id="to-step3">ถัดไป</button>
+        </div>
+        <div id="step3" class="step-screen">
+            <div class="step-message">โน้ตมีอะไรเล็กๆน้อยๆที่ตั้งใจทำมาให้ มันไม่ค่อยสวยเท่าไหร่แต่ฉันทำก่อนวันเกิดเป็นเดือนเลยนะ</div>
+            <button class="next-btn" id="open-gift-btn">เปิดของขวัญ</button>
+        </div>
+        <div id="countdown-screen" style="display:none;font-size:120px;color:#a29bfe;font-weight:bold;text-align:center;"></div>
+        <div id="gift-container" class="gift-container" style="display:none;">
+            <div class="gift-box new-gift" id="gift-box">
+                <div class="gift-lid"></div>
+                <div class="gift-ribbon"></div>
+                <div class="gift-base"></div>
+            </div>
+            <p class="click-text">มีของขวัญมาให้ด้วยนะ</p>
+        </div>
+    </div>
+
+    <div id="birthday-modal" class="modal">
+        <div class="modal-content">
+            <h1>สุขสันต์วันเกิดนะออยใจ</h1>
+            <p>ขอให้มีความสุขมากๆ สุขภาพแข็งแรงไม่ปวดท้อง คิดอะไรก็สมหวังทุกอย่างเลย ขอให้ปีนี้เต็มไปด้วยรอยยิ้มออยเหมาะกับรอยยิ้มที่สุดยิ้มแล้วสวยมาก</p>
+            
+            <div class="image-container">
+                <img src="https://raw.githubusercontent.com/Notezaza/Happy-Birthday/main/S__4399107_0.jpg" alt="รูปภาพเซอร์ไพรส์">
+            </div>
+        </div>
+    </div>
+
+    <canvas id="confetti-canvas" class="effects-canvas" style="z-index: 20;"></canvas>
+
+    <script>
+        // --- Element References ---
+        const toStep2Btn = document.getElementById('to-step2');
+        const toStep3Btn = document.getElementById('to-step3');
+        const openGiftBtn = document.getElementById('open-gift-btn');
+        const countdownScreen = document.getElementById('countdown-screen');
+        const giftContainer = document.getElementById('gift-container');
+        const giftBox = document.getElementById('gift-box');
+        const modal = document.getElementById('birthday-modal');
+
+        // --- Color Palette for Animations ---
+        const animationColors = ['#a29bfe', '#74b9ff', '#fab1a0', '#ffeaa7', '#55efc4'];
+
+        // --- Main Logic ---
+        function showStep(step) {
+            document.querySelectorAll('.step-screen').forEach(el => el.classList.remove('active'));
+            document.getElementById(step).classList.add('active');
+        }
+
+        // Step navigation
+        toStep2Btn.onclick = () => showStep('step2');
+        toStep3Btn.onclick = () => showStep('step3');
+        openGiftBtn.onclick = () => {
+            document.querySelectorAll('.step-screen').forEach(el => el.classList.remove('active'));
+            countdownScreen.style.display = 'block';
+            startCountdown();
+        };
+
+        function startCountdown() {
+            let count = 3;
+            countdownScreen.textContent = count;
+
+            const countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownScreen.textContent = count;
+                } else if (count === 0) {
+                    countdownScreen.textContent = 'เปิดเลย!';
+                } else {
+                    clearInterval(countdownInterval);
+                    countdownScreen.style.display = 'none';
+                    giftContainer.style.display = 'block';
+                    startBalloons();
+                    startFireworks();
+                }
+            }, 1000);
+        }
+
+        let giftOpened = false;
+        giftBox.onclick = function() {
+            if (giftOpened) return;
+            giftOpened = true;
+            giftBox.classList.add('open');
+            setTimeout(() => {
+                giftContainer.style.opacity = '0';
+                giftContainer.style.transform = 'scale(0.8)';
+                giftContainer.style.transition = 'opacity 0.5s, transform 0.5s';
+            }, 400);
+            startConfetti();
+            setTimeout(() => {
+                modal.style.display = 'flex';
+            }, 1200);
+        };
+
+        // --- Animation Functions ---
+        const fireworksCanvas = document.getElementById('fireworks-canvas');
+        const f_ctx = fireworksCanvas.getContext('2d');
+        let fireworks = [];
+        let particles = [];
+        
+        function setupCanvas(canvas) {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function Firework(sx, sy, tx, ty) {
+            this.x = sx; this.y = sy; this.sx = sx; this.sy = sy; this.tx = tx; this.ty = ty;
+            this.distanceToTarget = Math.sqrt(Math.pow(tx - sx, 2) + Math.pow(ty - sy, 2));
+            this.distanceTraveled = 0;
+            this.coordinates = Array(3).fill([this.x, this.y]);
+            this.angle = Math.atan2( ty - sy, tx - sx );
+            this.speed = 2; this.acceleration = 1.05;
+        }
+
+        Firework.prototype.update = function(index) {
+            this.coordinates.pop(); this.coordinates.unshift([this.x, this.y]);
+            this.speed *= this.acceleration;
+            let vx = Math.cos(this.angle) * this.speed; let vy = Math.sin(this.angle) * this.speed;
+            this.distanceTraveled = Math.sqrt(Math.pow(this.x - this.sx, 2) + Math.pow(this.y - this.sy, 2));
+            if (this.distanceTraveled >= this.distanceToTarget) {
+                createParticles(this.tx, this.ty);
+                fireworks.splice(index, 1);
+            } else { this.x += vx; this.y += vy; }
+        }
+
+        Firework.prototype.draw = function() {
+            f_ctx.beginPath();
+            f_ctx.moveTo(this.coordinates[this.coordinates.length - 1][0], this.coordinates[this.coordinates.length - 1][1]);
+            f_ctx.lineTo(this.x, this.y);
+            f_ctx.strokeStyle = animationColors[Math.floor(Math.random() * animationColors.length)];
+            f_ctx.stroke();
+        }
+
+        function Particle(x, y) {
+            this.x = x; this.y = y;
+            this.coordinates = Array(5).fill([this.x, this.y]);
+            this.angle = Math.random() * Math.PI * 2;
+            this.speed = Math.random() * 10 + 1;
+            this.friction = 0.95; this.gravity = 1;
+            this.color = animationColors[Math.floor(Math.random() * animationColors.length)];
+            this.alpha = 1; this.decay = Math.random() * 0.03 + 0.015;
+        }
+
+        Particle.prototype.update = function(index) {
+            this.coordinates.pop(); this.coordinates.unshift([this.x, this.y]);
+            this.speed *= this.friction;
+            this.x += Math.cos(this.angle) * this.speed;
+            this.y += Math.sin(this.angle) * this.speed + this.gravity;
+            this.alpha -= this.decay;
+            if (this.alpha <= this.decay) particles.splice(index, 1);
+        }
+
+        Particle.prototype.draw = function() {
+            f_ctx.beginPath();
+            f_ctx.moveTo(this.coordinates[this.coordinates.length - 1][0], this.coordinates[this.coordinates.length - 1][1]);
+            f_ctx.lineTo(this.x, this.y);
+            f_ctx.strokeStyle = `${this.color.replace(')', ', ' + this.alpha + ')')}`;
+            f_ctx.stroke();
+        }
+
+        function createParticles(x, y) {
+            let particleCount = 30;
+            while (particleCount--) particles.push(new Particle(x, y));
+        }
+        
+        let fwAnimationId;
+        function animateFireworks() {
+            setupCanvas(fireworksCanvas);
+            f_ctx.fillStyle = 'rgba(248, 249, 250, 0.15)'; // Fade effect
+            f_ctx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+            
+            fireworks.forEach((fw, i) => { fw.draw(); fw.update(i); });
+            particles.forEach((p, i) => { p.draw(); p.update(i); });
+            
+            fwAnimationId = requestAnimationFrame(animateFireworks);
+        }
+        
+        setInterval(() => {
+            if (document.getElementById('gift-container').style.display === 'block') {
+                fireworks.push(new Firework(Math.random() * fireworksCanvas.width, fireworksCanvas.height, Math.random() * fireworksCanvas.width, Math.random() * fireworksCanvas.height / 2));
+            }
+        }, 1500);
+
+
+        const balloonsCanvas = document.getElementById('balloons-canvas');
+        const b_ctx = balloonsCanvas.getContext('2d');
+        let balloons = [];
+
+        function Balloon() {
+            this.x = Math.random() * balloonsCanvas.width;
+            this.y = balloonsCanvas.height + 100;
+            this.radius = Math.random() * 15 + 20;
+            this.color = animationColors[Math.floor(Math.random() * animationColors.length)];
+            this.speed = Math.random() * 1.5 + 0.5;
+            this.wave = Math.random() * 10;
+        }
+        
+        let bAnimationId;
+        function animateBalloons() {
+            setupCanvas(balloonsCanvas);
+            b_ctx.clearRect(0, 0, balloonsCanvas.width, balloonsCanvas.height);
+            
+            for(let i = balloons.length - 1; i >= 0; i--) {
+                let b = balloons[i];
+                b.y -= b.speed;
+                b.x += Math.sin(b.y / 40 + b.wave) * 0.8;
+                b_ctx.beginPath();
+                b_ctx.fillStyle = b.color;
+                b_ctx.globalAlpha = 0.7;
+                b_ctx.ellipse(b.x, b.y, b.radius, b.radius * 1.2, 0, 0, Math.PI * 2);
+                b_ctx.fill();
+                b_ctx.globalAlpha = 1;
+                
+                b_ctx.strokeStyle = '#2d3436';
+                b_ctx.lineWidth = 1;
+                b_ctx.beginPath();
+                b_ctx.moveTo(b.x, b.y + b.radius * 1.2);
+                b_ctx.lineTo(b.x, b.y + b.radius * 1.2 + 20);
+                b_ctx.stroke();
+
+                if(b.y < -100) balloons.splice(i, 1);
+            }
+            bAnimationId = requestAnimationFrame(animateBalloons);
+        }
+        
+        setInterval(() => {
+            if (document.getElementById('gift-container').style.display === 'block' && balloons.length < 15) {
+                balloons.push(new Balloon());
+            }
+        }, 800);
+
+
+        const confettiCanvas = document.getElementById('confetti-canvas');
+        const c_ctx = confettiCanvas.getContext('2d');
+        let confettiPieces = [];
+
+        function startConfetti() {
+            setupCanvas(confettiCanvas);
+            const numberOfPieces = 200;
+            confettiPieces = [];
+            for (let i = 0; i < numberOfPieces; i++) {
+                confettiPieces.push({
+                    x: giftContainer.offsetLeft + giftContainer.offsetWidth / 2,
+                    y: giftContainer.offsetTop + giftContainer.offsetHeight / 2,
+                    size: Math.random() * 8 + 5,
+                    color: animationColors[Math.floor(Math.random() * animationColors.length)],
+                    speedX: Math.random() * 20 - 10,
+                    speedY: Math.random() * -20 - 5,
+                    gravity: 0.2,
+                    angle: Math.random() * 360,
+                    tilt: Math.random() * 20 - 10,
+                    tiltAngle: 0
+                });
+            }
+            animateConfetti();
+        }
+        
+        let confettiAnimationId;
+        function animateConfetti() {
+            c_ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            let activeConfetti = 0;
+            confettiPieces.forEach((p) => {
+                if (p.y < confettiCanvas.height) {
+                    activeConfetti++;
+                    p.speedY += p.gravity;
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+                    p.speedX *= 0.98;
+
+                    c_ctx.save();
+                    c_ctx.fillStyle = p.color;
+                    c_ctx.translate(p.x + p.size / 2, p.y + p.size / 2);
+                    c_ctx.rotate(p.angle * Math.PI / 180);
+                    c_ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    c_ctx.restore();
+                }
+            });
+            if (activeConfetti > 0) {
+                 confettiAnimationId = requestAnimationFrame(animateConfetti);
+            } else {
+                 cancelAnimationFrame(confettiAnimationId);
+            }
+        }
+        
+        window.addEventListener('resize', () => {
+            setupCanvas(fireworksCanvas);
+            setupCanvas(balloonsCanvas);
+            setupCanvas(confettiCanvas);
+        });
+
+        // เริ่มต้นที่ step1
+        showStep('step1');
+    </script>
+</body>
+</html>
